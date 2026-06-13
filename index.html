@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heading Analyzer</title>
+<style>
+:root {
+  --bg: #f7f6f3;
+  --surface: #ffffff;
+  --surface2: #f0efe9;
+  --border: #e0ddd5;
+  --border-strong: #c8c4bc;
+  --text: #1a1a18;
+  --text-muted: #6b6860;
+  --text-hint: #9c9990;
+  --accent: #2563a8;
+  --accent-bg: #eff5ff;
+  --ok: #3b6d11;
+  --ok-bg: #eaf3de;
+  --ok-border: #97c459;
+  --err: #c0392b;
+  --err-bg: #fdf0ee;
+  --err-border: #e8a09a;
+  --warn-bg: #faeeda;
+  --warn: #854f0b;
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* HEADER */
+.header {
+  background: var(--surface);
+  border-bottom: 0.5px solid var(--border);
+  padding: 0 1.5rem;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo { font-size: 15px; font-weight: 600; white-space: nowrap; }
+.logo span { color: var(--accent); }
+
+/* MAIN */
+.main {
+  flex: 1;
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* URL INPUT */
+.input-row {
+  display: flex;
+  gap: 8px;
+}
+.input-row input {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+}
+.input-row input:focus { outline: none; border-color: var(--accent); }
+.input-row input::placeholder { color: var(--text-hint); }
+
+button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 16px; border: 0.5px solid var(--border-strong); border-radius: var(--radius);
+  background: var(--surface); color: var(--text); font-size: 13px; cursor: pointer;
+  white-space: nowrap; font-family: inherit; transition: background 0.1s;
+}
+button:hover { background: var(--surface2); }
+button:active { transform: scale(0.98); }
+button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-size: 14px; }
+button.primary:hover { background: #1a4f8f; }
+button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* STATS ROW */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stat-card .num { font-size: 22px; font-weight: 500; }
+.stat-card .lbl { font-size: 11px; color: var(--text-hint); text-transform: uppercase; letter-spacing: 0.4px; }
+.stat-card.has-err { border-color: var(--err-border); background: var(--err-bg); }
+.stat-card.has-err .num { color: var(--err); }
+.stat-card.all-ok { border-color: var(--ok-border); background: var(--ok-bg); }
+.stat-card.all-ok .num { color: var(--ok); }
+
+/* RESULTS */
+.results-wrap {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.results-header {
+  padding: 10px 16px;
+  border-bottom: 0.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.results-header span { font-size: 12px; color: var(--text-hint); }
+.results-list { padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+
+/* HEADING ITEM */
+.h-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: var(--radius);
+  border: 0.5px solid transparent;
+  line-height: 1.4;
+}
+.h-item.ok { background: transparent; }
+.h-item.error {
+  background: var(--err-bg);
+  border-color: var(--err-border);
+}
+.h-item.warning {
+  background: var(--warn-bg);
+  border-color: #f0c070;
+}
+
+.h-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  min-width: 32px;
+  text-align: center;
+  font-family: 'Courier New', monospace;
+}
+.tag-h1 { background: #1a1a18; color: #fff; }
+.tag-h2 { background: #2563a8; color: #fff; }
+.tag-h3 { background: #e6f1fb; color: #185fa5; border: 0.5px solid #93b4e8; }
+.tag-h4 { background: #eaf3de; color: #3b6d11; border: 0.5px solid #97c459; }
+.tag-h5 { background: #faeeda; color: #854f0b; border: 0.5px solid #ef9f27; }
+.tag-h6 { background: #f0efe9; color: #6b6860; border: 0.5px solid #c8c4bc; }
+
+.h-text {
+  font-size: 13px;
+  color: var(--text);
+  flex: 1;
+  word-break: break-word;
+}
+.h-item.error .h-text { color: var(--err); }
+
+.h-err-msg {
+  font-size: 11px;
+  color: var(--err);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* LOADING */
+.loading {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 1rem;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.loading.on { display: flex; }
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* EMPTY / ERROR STATE */
+.state-msg {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-hint);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.state-msg.err { color: var(--err); }
+
+/* LEGEND */
+.legend {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-muted);
+  align-items: center;
+}
+.leg-dot {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 3px;
+  margin-right: 4px;
+}
+
+/* FOOTER */
+footer {
+  text-align: center;
+  padding: 10px;
+  font-size: 11px;
+  color: var(--text-hint);
+  background: var(--surface);
+  border-top: 0.5px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* MOBILE */
+@media (max-width: 600px) {
+  .input-row { flex-direction: column; }
+  .input-row button { width: 100%; }
+  .stats { grid-template-columns: repeat(3, 1fr); }
+  .h-err-msg { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">Heading<span>Check</span></div>
+</header>
+
+<div class="main">
+
+  <div class="input-row">
+    <input type="url" id="urlInput" placeholder="https://example.com" autocomplete="off" spellcheck="false">
+    <button class="primary" id="btnAnalyze" onclick="analyze()">Analyze</button>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <span id="loadingMsg">Fetching page…</span>
+  </div>
+
+  <div id="statsRow" class="stats" style="display:none;"></div>
+
+  <div id="resultsWrap" class="results-wrap" style="display:none;">
+    <div class="results-header">
+      <div class="legend">
+        <span><span class="leg-dot" style="background:#fdf0ee;border:1px solid #e8a09a;"></span>Hierarchy error</span>
+        <span><span class="leg-dot" style="background:#ffffff;border:1px solid #e0ddd5;"></span>Valid</span>
+      </div>
+      <span id="resultsCount"></span>
+    </div>
+    <div class="results-list" id="resultsList"></div>
+  </div>
+
+  <div id="stateMsg" class="state-msg">
+    Enter a URL above and click <strong>Analyze</strong> to inspect the heading structure of any page.
+  </div>
+
+</div>
+
+<footer>Developed for <strong>Click2Start</strong></footer>
+
+<script>
+const PROXY = 'https://api.allorigins.win/get?url=';
+
+async function analyze() {
+  const raw = document.getElementById('urlInput').value.trim();
+  if (!raw) { showError('Please enter a URL.'); return; }
+
+  let url = raw;
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+  setLoading(true, 'Fetching page…');
+  hideResults();
+
+  try {
+    const res = await fetch(PROXY + encodeURIComponent(url), { cache: 'no-cache' });
+    if (!res.ok) throw new Error('Proxy returned ' + res.status);
+    const data = await res.json();
+    if (!data.contents) throw new Error('Empty response from proxy.');
+
+    setLoading(true, 'Parsing headings…');
+    const headings = extractHeadings(data.contents);
+
+    if (!headings.length) {
+      setLoading(false);
+      showError('No headings (H1–H6) found on this page.');
+      return;
+    }
+
+    const validated = validate(headings);
+    setLoading(false);
+    showResults(validated, url);
+
+  } catch (e) {
+    setLoading(false);
+    showError('Could not fetch the page. The site may block external requests, or the URL is invalid.<br><small>' + e.message + '</small>');
+  }
+}
+
+// ── EXTRACT ───────────────────────────────────────────────────────────────
+function extractHeadings(html) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  // Remove script, style, nav, footer to reduce noise
+  ['script','style','noscript'].forEach(tag => {
+    doc.querySelectorAll(tag).forEach(el => el.remove());
+  });
+
+  const found = [];
+  doc.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(el => {
+    const level = parseInt(el.tagName[1]);
+    const text  = el.textContent.replace(/\s+/g, ' ').trim();
+    if (text) found.push({ level, text });
+  });
+  return found;
+}
+
+// ── VALIDATE ──────────────────────────────────────────────────────────────
+function validate(headings) {
+  return headings.map((h, i) => {
+    let error = null;
+    if (i > 0) {
+      const prev = headings[i - 1].level;
+      const curr = h.level;
+      if (curr > prev + 1) {
+        error = `Skipped H${prev + 1}`;
+      }
+    }
+    // Flag multiple H1s
+    if (h.level === 1 && i > 0 && headings.slice(0, i).some(x => x.level === 1)) {
+      error = 'Multiple H1';
+    }
+    return { ...h, error };
+  });
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function showResults(items, url) {
+  const errors   = items.filter(h => h.error).length;
+  const h1count  = items.filter(h => h.level === 1).length;
+
+  // Stats
+  const statsRow = document.getElementById('statsRow');
+  statsRow.style.display = 'grid';
+  statsRow.innerHTML = `
+    <div class="stat-card">
+      <div class="num">${items.length}</div>
+      <div class="lbl">Total headings</div>
+    </div>
+    <div class="stat-card ${h1count === 1 ? 'all-ok' : 'has-err'}">
+      <div class="num">${h1count}</div>
+      <div class="lbl">H1 tags</div>
+    </div>
+    <div class="stat-card ${errors === 0 ? 'all-ok' : 'has-err'}">
+      <div class="num">${errors}</div>
+      <div class="lbl">Errors</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">${items.filter(h=>h.level===2).length}</div>
+      <div class="lbl">H2 tags</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">${items.filter(h=>h.level===3).length}</div>
+      <div class="lbl">H3 tags</div>
+    </div>
+  `;
+
+  // List
+  const list = document.getElementById('resultsList');
+  list.innerHTML = '';
+  items.forEach(h => {
+    const item = document.createElement('div');
+    item.className = 'h-item ' + (h.error ? 'error' : 'ok');
+    item.style.paddingLeft = (10 + (h.level - 1) * 20) + 'px';
+
+    const tag = document.createElement('span');
+    tag.className = `h-tag tag-h${h.level}`;
+    tag.textContent = 'H' + h.level;
+
+    const text = document.createElement('span');
+    text.className = 'h-text';
+    text.textContent = h.text.length > 120 ? h.text.slice(0, 118) + '…' : h.text;
+
+    item.appendChild(tag);
+    item.appendChild(text);
+
+    if (h.error) {
+      const msg = document.createElement('span');
+      msg.className = 'h-err-msg';
+      msg.textContent = '⚠ ' + h.error;
+      item.appendChild(msg);
+    }
+
+    list.appendChild(item);
+  });
+
+  document.getElementById('resultsCount').textContent = items.length + ' heading' + (items.length !== 1 ? 's' : '');
+  document.getElementById('resultsWrap').style.display = 'block';
+  document.getElementById('stateMsg').style.display = 'none';
+}
+
+// ── UI HELPERS ────────────────────────────────────────────────────────────
+function setLoading(on, msg) {
+  const el = document.getElementById('loading');
+  el.classList.toggle('on', on);
+  if (msg) document.getElementById('loadingMsg').textContent = msg;
+  document.getElementById('btnAnalyze').disabled = on;
+}
+
+function hideResults() {
+  document.getElementById('statsRow').style.display    = 'none';
+  document.getElementById('resultsWrap').style.display = 'none';
+  document.getElementById('stateMsg').style.display    = 'none';
+}
+
+function showError(msg) {
+  const el = document.getElementById('stateMsg');
+  el.className = 'state-msg err';
+  el.innerHTML = msg;
+  el.style.display = 'block';
+}
+
+// Enter key triggers analyze
+document.getElementById('urlInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') analyze();
+});
+</script>
+</body>
+</html>
