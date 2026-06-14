@@ -266,6 +266,7 @@ footer {
   <div class="input-row">
     <input type="url" id="urlInput" placeholder="https://example.com" autocomplete="off" spellcheck="false">
     <button class="primary" id="btnAnalyze" onclick="analyze()">Analyze</button>
+    <button id="btnReset" onclick="doReset()" style="display:none;">✕ Reset</button>
   </div>
 
   <div class="loading" id="loading">
@@ -433,6 +434,19 @@ function showResults(items, url) {
   document.getElementById('resultsCount').textContent = items.length + ' heading' + (items.length !== 1 ? 's' : '');
   document.getElementById('resultsWrap').style.display = 'block';
   document.getElementById('stateMsg').style.display = 'none';
+  document.getElementById('btnReset').style.display = 'inline-flex';
+}
+
+// ── RESET ─────────────────────────────────────────────────────────────────
+function doReset() {
+  document.getElementById('urlInput').value = '';
+  document.getElementById('btnReset').style.display = 'none';
+  hideResults();
+  const msg = document.getElementById('stateMsg');
+  msg.className = 'state-msg';
+  msg.innerHTML = 'Enter a URL above and click <strong>Analyze</strong> to inspect the heading structure of any page.';
+  msg.style.display = 'block';
+  document.getElementById('urlInput').focus();
 }
 
 // ── UI HELPERS ────────────────────────────────────────────────────────────
